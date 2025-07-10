@@ -6,14 +6,14 @@ body {
 #splash_title {
 	width: 100%;
   font-size: 100px;
-  color: rgb(66, 78, 72);
+  color: rgba(66, 78, 72, 0.752);
   opacity: 0.85;
   text-shadow: 4px 4px 4px rgba(255, 255, 255);
   text-align: center;
 }
 
 .menu_button {
-	background-color: rgb(132, 208, 132);
+	background-color: rgba(132, 208, 132, 0.67);
     font-size: 28px;
     color: white;
     cursor: pointer;
