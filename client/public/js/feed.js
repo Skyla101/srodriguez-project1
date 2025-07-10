@@ -51,3 +51,5 @@ window.addEventListener('load', () => {
       img.style.height = 'auto';  // Maintain aspect ratio :contentReference[oaicite:1]{index=1}
     });
 });
+
+
