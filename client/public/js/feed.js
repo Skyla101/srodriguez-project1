@@ -1,55 +1,115 @@
-const currentStories = [
-    {
-      title: 'Ponyo',
-      body: 'Ponyo is a Japanese animated film that tells the story of a goldfish named Ponyo who escapes from the ocean and is helped by a five-year-old human boy named Sōsuke.',
-      imageUrl: 'https://th.bing.com/th/id/R.d23ff93e924cf7c020780156486e6a43?rik=gqp3xn%2beKXJjRw&riu=http%3a%2f%2fmoviemezzanine.com%2fwp-content%2fuploads%2fponyo.png&ehk=wFArsS6LimzRtf4i91scxGr1VSBtDRpEbfygRvndmN0%3d&risl=&pid=ImgRaw&r=0',
-      linkUrl:'https://www.imdb.com/title/tt0876563/',
-
-    },
-    {
-      title: 'Spirited Away',
-      body: 'A young girl named Chihiro becomes trapped in a mysterious place; as Chihiro navigates this strange realm, she embarks on a journey to find a way back to her own world.',
-      imageUrl: 'https://www.liveabout.com/thmb/rD4CxUzijKaLQLVK8AR9xjqy0gQ=/750x0/filters:no_upscale():max_bytes(150000):strip_icc()/SpiritedAway-57a97fec5f9b58974af2187f.jpg',
-      linkUrl:'https://www.imdb.com/title/tt0245429/',
-     
-    },
-    {
-      title: 'Grave of The Fireflies',
-      body: 'Seit, a teenager charged with the care of his younger sister, Setsuko, after an American firebombing during World War II. The siblings rely completely on each other and struggle against all odds to stay together and stay alive.',
-      imageUrl: 'https://cdn2.shopify.com/s/files/1/0747/3829/products/HP2564_be44d685-49ba-4119-a5d6-4cdc0d5c5fd8_1024x1024.jpg?v=1515503862',
-      linkUrl:'https://www.imdb.com/title/tt0095327/',
-       
-    }
-];
-function displayItem(item) {
-    const container = document.getElementById('newsfeed');
-    if (!container) return;
-    const storyHTML = `
-      <div class="feedItem">
-        <h2><a href="${item.linkUrl}" target="_blank">${item.title}</a></h2>
-        <img src="${item.imageUrl}" alt="${item.title}" >
-        <p>${item.body}</p>
-      </div>
-    `;
-    container.insertAdjacentHTML('beforeend', storyHTML);
+function addStoryToPage(feedItem, index) {
+  const newsfeed = document.getElementById('newsfeed');
+  const storyDiv = document.createElement('div');
+  storyDiv.classList.add('feedItem');
+  storyDiv.innerHTML = `
+    <h2><a href="${feedItem.linkUrl}" target="_blank">${feedItem.title}</a></h2>
+    <img src="${feedItem.imageUrl}" alt="${feedItem.title}" style="width:200px; height:auto;" />
+    <p>${feedItem.body}</p>
+    <button class="delete-button" onclick="deleteFeedItem(${index})">Delete</button>
+  `;
+  newsfeed.appendChild(storyDiv);
 }
-  
-window.addEventListener('load', () => {
-    // portal button navigation
-    const portal = document.getElementById('portal_button');
-    if (portal) portal.addEventListener('click', () => goToLocation('https://gkids.com/ghiblifest/'));
-  
-    // populate feed
-    currentStories.forEach(displayItem);
-});
-window.addEventListener('load', () => {
-    // Select all images inside the #newsfeed container
-    const images = document.querySelectorAll('#newsfeed img');
-  
-    images.forEach(img => {
-      img.style.width = '200px';  // Set the desired width
-      img.style.height = 'auto';  // Maintain aspect ratio :contentReference[oaicite:1]{index=1}
+
+function getCurrentFeed() {
+  fetch('/api/feedItems')
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(feedItems => {
+      const newsfeed = document.getElementById('newsfeed');
+      newsfeed.innerHTML = '';  
+      feedItems.forEach((item, index) => {
+        addStoryToPage(item, index);
+      });
+    })
+    .catch(error => {
+      console.error('Error fetching feed:', error);
     });
+}
+
+function deleteFeedItem(index) {
+  fetch(`/api/feedItems/${index}`, { method: 'DELETE' })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to delete feed item');
+      return response.json();
+    })
+    .then(() => {
+      getCurrentFeed(); 
+    })
+    .catch(error => {
+      console.error('Error deleting feed item:', error);
+    });
+}
+
+window.addEventListener("load", () => {
+  const addButton = document.getElementById("add-button");
+
+  if (addButton) {
+    addButton.addEventListener("click", () => {
+      const title = document.getElementById("title").value.trim();
+      const body = document.getElementById("body").value.trim();
+      const imageUrl = document.getElementById("imageUrl").value.trim();
+      const linkUrl = document.getElementById("linkUrl").value.trim();
+
+      // Validate required fields
+      if (!title || !body) {
+        alert("Title and Body are required.");
+        return;
+      }
+
+      const newfeedItem = { title, body, imageUrl, linkUrl };
+
+      fetch("/api/feedItems", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newfeedItem)
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to add feed item");
+          return res.json();
+        })
+        .then(data => {
+          console.log("Successfully added:", data);
+          getCurrentFeed(); // <-- refresh the feed
+          // Optional: clear input fields
+          document.getElementById("title").value = '';
+          document.getElementById("body").value = '';
+          document.getElementById("imageUrl").value = '';
+          document.getElementById("linkUrl").value = '';
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Failed to add feed item. Check the console.");
+        });
+    });
+  }
 });
+function postFeedItem(index) {
+  fetch(`/api/feedItems/${index}`, { method: 'POST' })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to add feed item');
+      return response.json();
+    })
+    .then(() => {
+      getCurrentFeed(); 
+    })
+    .catch(error => {
+      console.error('Error adding feed item:', error);
+    });
+}
+
+window.addEventListener('load', () => {
+  
+  const portal = document.getElementById('portal_button');
+  if (portal) portal.addEventListener('click', () => {
+    window.location.href = 'https://gkids.com/ghiblifest/';
+  });
 
 
+  
+  getCurrentFeed();
+});
